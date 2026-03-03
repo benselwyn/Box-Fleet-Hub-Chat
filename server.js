@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 app.use(cors());
@@ -61,6 +62,10 @@ app.post("/chat", async (req, res) => {
 });
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "fleet-hub-chat.html"));
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Fleet proxy running on port ${PORT}`));

@@ -400,7 +400,7 @@ When the user asks a question:
       .map(m => ({ role: m.role === "ai" ? "assistant" : m.role, content: m.content }));
 
     try {
-      const PROXY_URL = "REPLACE_WITH_YOUR_RAILWAY_URL/chat";
+      const PROXY_URL = "https://box-fleet-hub-chat-production.up.railway.app/chat";
 
       const response = await fetch(PROXY_URL, {
         method: "POST",
