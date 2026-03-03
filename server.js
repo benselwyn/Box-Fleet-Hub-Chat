@@ -110,6 +110,18 @@ const chatLimiter = rateLimit({
 
 app.use(express.json({ limit: "50kb" }));
 
+// ── Query log ─────────────────────────────────────────────────────────────────
+const LOGS_TOKEN = process.env.LOGS_TOKEN;
+const MAX_LOG_ENTRIES = 100;
+const queryLog = [];
+
+function logQuery(text) {
+  const entry = { timestamp: new Date().toISOString(), query: text.slice(0, 500) };
+  if (queryLog.length >= MAX_LOG_ENTRIES) queryLog.shift();
+  queryLog.push(entry);
+  console.log(JSON.stringify({ event: "query", ...entry }));
+}
+
 // ── Box token cache ───────────────────────────────────────────────────────────
 let boxToken = null;
 let tokenExpiry = 0;
@@ -160,11 +172,21 @@ app.post("/chat", chatLimiter, async (req, res) => {
     return res.status(500).json({ error: "Server configuration error." });
   }
 
-  const { messages } = req.body;
+  const { messages, detailed } = req.body;
 
   if (!validateMessages(messages)) {
     return res.status(400).json({ error: "Invalid request." });
   }
+
+  if (detailed !== undefined && typeof detailed !== "boolean") {
+    return res.status(400).json({ error: "Invalid request." });
+  }
+
+  // Log the last user message (anonymised)
+  const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+  if (lastUserMsg) logQuery(lastUserMsg.content);
+
+  const maxTokens = detailed ? 1500 : 600;
 
   try {
     const boxAccessToken = await getBoxToken();
@@ -179,7 +201,7 @@ app.post("/chat", chatLimiter, async (req, res) => {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 600,
+        max_tokens: maxTokens,
         stream: true,
         system: SYSTEM_PROMPT,
         messages,
@@ -239,6 +261,15 @@ app.post("/chat", chatLimiter, async (req, res) => {
 });
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
+
+app.get("/logs", (req, res) => {
+  if (!LOGS_TOKEN) return res.status(401).json({ error: "Unauthorized." });
+  const auth = req.headers["authorization"];
+  if (!auth || auth !== `Bearer ${LOGS_TOKEN}`) {
+    return res.status(401).json({ error: "Unauthorized." });
+  }
+  res.json({ count: queryLog.length, entries: queryLog });
+});
 
 app.get("/logo.png", (req, res) => {
   res.sendFile(path.join(__dirname, "FQ logo.png"));
