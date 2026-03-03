@@ -123,7 +123,9 @@ function validateMessages(messages) {
     if (!msg || typeof msg !== "object") return false;
     if (!["user", "assistant"].includes(msg.role)) return false;
     if (typeof msg.content !== "string") return false;
-    if (msg.content.length === 0 || msg.content.length > MAX_MESSAGE_LENGTH) return false;
+    if (msg.content.length === 0) return false;
+    // Only cap length for user messages -- assistant responses can be long
+    if (msg.role === "user" && msg.content.length > MAX_MESSAGE_LENGTH) return false;
   }
   return true;
 }
