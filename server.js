@@ -53,7 +53,9 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN; // e.g. https://yourwordpress
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 const allowedOrigins = new Set([RAILWAY_DOMAIN]);
-if (ALLOWED_ORIGIN) allowedOrigins.add(ALLOWED_ORIGIN);
+if (ALLOWED_ORIGIN) {
+  ALLOWED_ORIGIN.split(",").map(o => o.trim()).forEach(o => allowedOrigins.add(o));
+}
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -68,11 +70,8 @@ app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
   res.setHeader("X-DNS-Prefetch-Control", "off");
-  if (ALLOWED_ORIGIN) {
-    res.setHeader("Content-Security-Policy", `frame-ancestors ${RAILWAY_DOMAIN} ${ALLOWED_ORIGIN}`);
-  } else {
-    res.setHeader("Content-Security-Policy", `frame-ancestors ${RAILWAY_DOMAIN}`);
-  }
+  const frameOrigins = [...allowedOrigins].join(" ");
+  res.setHeader("Content-Security-Policy", `frame-ancestors ${frameOrigins}`);
   next();
 });
 
