@@ -171,6 +171,8 @@
     color: var(--user-text);
   }
 
+  .bubble p { margin: 0 0 0.6em; }
+  .bubble p:last-child { margin-bottom: 0; }
   .bubble strong { color: var(--teal); }
   .bubble em { color: var(--text-muted); font-style: normal; font-size: 12px; }
 
@@ -301,6 +303,80 @@
     border-color: var(--navy);
     color: var(--navy);
   }
+
+  /* Name bar */
+  .name-bar {
+    padding: 0 16px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .name-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 11.5px;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .name-link:hover { color: var(--teal); }
+
+  .name-input-wrap {
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .name-input-wrap input {
+    background: var(--bg);
+    border: 1px solid var(--teal);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    outline: none;
+    padding: 4px 8px;
+    width: 140px;
+  }
+
+  .name-confirm-btn {
+    background: var(--teal);
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 4px 7px;
+  }
+
+  .name-display {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 11.5px;
+  }
+
+  .name-clear-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 11.5px;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .name-clear-btn:hover { color: var(--teal); }
 </style>
 </head>
 <body>
@@ -328,6 +404,14 @@
     <button class="prompt-chip" onclick="usePrompt(this)">What role do FMOs play in supporting fleet electrification?</button>
     <button class="prompt-chip" onclick="usePrompt(this)">What are the top service and maintenance priorities for fleet managers?</button>
   </div>
+  <div class="name-bar">
+    <button class="name-link" id="nameTrigger" onclick="showNameInput()">Personalise responses →</button>
+    <div class="name-input-wrap" id="nameInputWrap">
+      <input type="text" id="nameInput" placeholder="Your first name" maxlength="40" onkeydown="handleNameKey(event)" />
+      <button class="name-confirm-btn" onclick="saveName()">✓</button>
+    </div>
+    <div class="name-display" id="nameDisplay"></div>
+  </div>
   <div class="input-area">
     <textarea id="userInput" placeholder="Ask about fleet research..." rows="1" maxlength="1000" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <button class="detail-btn" id="detailBtn" onclick="toggleDetail()" title="Request a more detailed response">Detail</button>
@@ -341,6 +425,7 @@
   let messages = [];
   let loading = false;
   let detailed = false;
+  let userName = null;
 
   const expandIcon = `<path d="M1.5 1h4v1.5h-2.5v2.5h-1.5v-4zm9 0h4v4h-1.5v-2.5h-2.5v-1.5zm-9 9h1.5v2.5h2.5v1.5h-4v-4zm10.5 2.5v-2.5h1.5v4h-4v-1.5h2.5z"/>`;
   const collapseIcon = `<path d="M5.5 1.5v2.5h-2.5v1.5h4v-4h-1.5zm5 0h-1.5v4h4v-1.5h-2.5v-2.5zm-7.5 7.5h-2.5v1.5h4v-4h-1.5v2.5zm7.5-2.5v4h1.5v-4h-4v1.5h2.5z"/>`;
@@ -382,6 +467,45 @@
   function autoResize(el) {
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 100) + "px";
+  }
+
+  function showNameInput() {
+    document.getElementById("nameTrigger").style.display = "none";
+    const wrap = document.getElementById("nameInputWrap");
+    wrap.style.display = "flex";
+    document.getElementById("nameInput").focus();
+  }
+
+  function handleNameKey(e) {
+    if (e.key === "Enter") saveName();
+    if (e.key === "Escape") cancelName();
+  }
+
+  function saveName() {
+    const val = document.getElementById("nameInput").value.trim();
+    if (!val) { cancelName(); return; }
+    userName = val;
+    document.getElementById("nameInputWrap").style.display = "none";
+    const display = document.getElementById("nameDisplay");
+    display.style.display = "flex";
+    const text = document.createTextNode(`Hi, ${val} · `);
+    const clearBtn = document.createElement("button");
+    clearBtn.className = "name-clear-btn";
+    clearBtn.textContent = "change";
+    clearBtn.onclick = clearName;
+    display.replaceChildren(text, clearBtn);
+  }
+
+  function cancelName() {
+    document.getElementById("nameInputWrap").style.display = "none";
+    document.getElementById("nameTrigger").style.display = "";
+  }
+
+  function clearName() {
+    userName = null;
+    document.getElementById("nameInput").value = "";
+    document.getElementById("nameDisplay").style.display = "none";
+    document.getElementById("nameTrigger").style.display = "";
   }
 
   function usePrompt(chip) {
@@ -508,7 +632,12 @@
           .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         t = t.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
         t = t.replace(/`([^`]+)`/g, "<em>$1</em>");
-        span.innerHTML = t;
+        const paras = t.split(/\n\n+/);
+        if (paras.length > 1) {
+          span.innerHTML = paras.map(p => `<p>${p.replace(/\n/g, "<br>")}</p>`).join("");
+        } else {
+          span.innerHTML = t.replace(/\n/g, "<br>");
+        }
         container.appendChild(span);
       }
     }
@@ -557,6 +686,13 @@
     const apiMessages = messages
       .filter(m => m.role !== "system")
       .map(m => ({ role: m.role === "ai" ? "assistant" : m.role, content: m.content }));
+
+    if (userName) {
+      apiMessages.unshift(
+        { role: "user", content: `My name is ${userName}.` },
+        { role: "assistant", content: `Got it, ${userName}.` }
+      );
+    }
 
     try {
       const PROXY_URL = "https://box-fleet-hub-chat-production.up.railway.app/chat";
