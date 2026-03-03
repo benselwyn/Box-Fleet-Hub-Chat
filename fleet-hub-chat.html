@@ -3,24 +3,23 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Fleet Research Assistant</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<title>FQ Fleet Research Expert</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #30363d;
-    --accent: #238636;
-    --accent-bright: #2ea043;
-    --text: #e6edf3;
-    --text-muted: #7d8590;
-    --user-bg: #1f3a4d;
-    --user-border: #1f6feb;
-    --ai-bg: #161b22;
-    --font-ui: 'IBM Plex Sans', sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
+    --bg: #F4F6F8;
+    --surface: #FFFFFF;
+    --border: #DDE2E8;
+    --navy: #1B2A4A;
+    --teal: #2A9D8F;
+    --teal-light: #E8F5F3;
+    --text: #1B2A4A;
+    --text-muted: #6B7A8D;
+    --user-bg: #1B2A4A;
+    --user-text: #FFFFFF;
+    --ai-bg: #FFFFFF;
+    --font-ui: 'Segoe UI', Arial, sans-serif;
   }
 
   body {
@@ -38,35 +37,35 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 20px;
+    padding: 12px 20px;
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 2px solid var(--navy);
     flex-shrink: 0;
   }
 
-  .header-icon {
-    width: 32px;
+  .header-logo {
     height: 32px;
-    background: var(--accent);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
     flex-shrink: 0;
   }
 
   .header-title {
     font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
+    font-weight: 700;
+    color: var(--navy);
     letter-spacing: 0.01em;
   }
 
   .header-sub {
     font-size: 11px;
     color: var(--text-muted);
-    font-family: var(--font-mono);
     margin-top: 1px;
   }
 
@@ -74,10 +73,15 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: var(--accent-bright);
+    background: var(--teal);
     margin-left: auto;
-    box-shadow: 0 0 6px var(--accent-bright);
+    box-shadow: 0 0 6px var(--teal);
     animation: glow 2s ease-in-out infinite;
+  }
+
+  @keyframes glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
 
   .fullscreen-btn {
@@ -95,19 +99,14 @@
   }
 
   .fullscreen-btn:hover {
-    color: var(--text);
-    border-color: var(--text-muted);
+    color: var(--navy);
+    border-color: var(--navy);
   }
 
   .fullscreen-btn svg {
     width: 14px;
     height: 14px;
     fill: currentColor;
-  }
-
-  @keyframes glow {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
   }
 
   /* Messages */
@@ -138,12 +137,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 10px;
+    font-weight: 700;
     margin-top: 2px;
+    letter-spacing: 0.02em;
   }
 
-  .avatar.ai { background: var(--accent); font-family: var(--font-mono); font-weight: 600; font-size: 11px; color: #fff; }
-  .avatar.user { background: var(--user-bg); border: 1px solid var(--user-border); font-size: 13px; }
+  .avatar.ai { background: var(--navy); color: #fff; }
+  .avatar.user { background: var(--teal); color: #fff; }
 
   .bubble {
     max-width: 80%;
@@ -160,17 +161,17 @@
     border: 1px solid var(--border);
     border-bottom-left-radius: 2px;
     color: var(--text);
+    box-shadow: 0 1px 3px rgba(27,42,74,0.06);
   }
 
   .bubble.user {
     background: var(--user-bg);
-    border: 1px solid var(--user-border);
     border-bottom-right-radius: 2px;
-    color: var(--text);
+    color: var(--user-text);
   }
 
-  .bubble strong { color: #79c0ff; }
-  .bubble em { color: var(--text-muted); font-style: normal; font-family: var(--font-mono); font-size: 12px; }
+  .bubble strong { color: var(--teal); }
+  .bubble em { color: var(--text-muted); font-style: normal; font-size: 12px; }
 
   /* Typing */
   .typing-dots { display: flex; gap: 4px; align-items: center; height: 18px; padding: 2px 0; }
@@ -213,13 +214,13 @@
     transition: border-color 0.15s;
   }
 
-  textarea:focus { border-color: var(--accent-bright); }
+  textarea:focus { border-color: var(--teal); }
   textarea::placeholder { color: var(--text-muted); }
 
   .send-btn {
     width: 36px;
     height: 36px;
-    background: var(--accent);
+    background: var(--navy);
     border: none;
     border-radius: 6px;
     color: #fff;
@@ -232,71 +233,18 @@
     transition: background 0.15s, opacity 0.15s;
   }
 
-  .send-btn:hover:not(:disabled) { background: var(--accent-bright); }
+  .send-btn:hover:not(:disabled) { background: var(--teal); }
   .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  /* API key prompt */
-  .key-prompt {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-
-  .key-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 28px 24px;
-    max-width: 360px;
-    width: 100%;
-    text-align: center;
-  }
-
-  .key-card h2 { font-size: 15px; margin-bottom: 8px; color: var(--text); }
-  .key-card p { font-size: 12.5px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
-
-  .key-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    padding: 10px 12px;
-    outline: none;
-    margin-bottom: 12px;
-    transition: border-color 0.15s;
-  }
-
-  .key-input:focus { border-color: var(--accent-bright); }
-
-  .key-btn {
-    width: 100%;
-    background: var(--accent);
-    border: none;
-    border-radius: 6px;
-    color: #fff;
-    font-family: var(--font-ui);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 10px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-
-  .key-btn:hover { background: var(--accent-bright); }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="header-icon">🚛</div>
+  <img src="/logo.png" alt="Fifth Quadrant" class="header-logo" />
+  <div class="header-divider"></div>
   <div>
-    <div class="header-title">Fleet Research Assistant</div>
-    <div class="header-sub">box://hub/fleet-research</div>
+    <div class="header-title">FQ Fleet Research Expert</div>
+    <div class="header-sub">Powered by Fifth Quadrant Research</div>
   </div>
   <div class="status-dot"></div>
   <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">
@@ -305,8 +253,6 @@
     </svg>
   </button>
 </div>
-
-
 
 <div id="chatUI" style="flex:1; flex-direction:column; overflow:hidden; display:flex;">
   <div class="messages" id="messages"></div>
@@ -331,7 +277,6 @@
       document.documentElement.requestFullscreen().then(() => {
         icon.innerHTML = collapseIcon;
       }).catch(() => {
-        // Fallback: open in new tab
         window.open(window.location.href, "_blank");
       });
     } else {
@@ -350,6 +295,10 @@
     activateChat();
     document.getElementById("userInput").addEventListener("input", updateSendBtn);
   };
+
+  function activateChat() {
+    document.getElementById("chatUI").style.display = "flex";
+  }
 
   function updateSendBtn() {
     const val = document.getElementById("userInput").value.trim();
@@ -395,13 +344,11 @@
   }
 
   function formatContent(text) {
-    // Escape HTML first to prevent XSS
     text = text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
-    // Then apply markdown patterns on the now-safe escaped text
     text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
     text = text.replace(/`([^`]+)`/g, "<em>$1</em>");
     return text;
@@ -455,9 +402,7 @@
       const response = await fetch(PROXY_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: apiMessages
-        })
+        body: JSON.stringify({ messages: apiMessages })
       });
 
       const data = await response.json();

@@ -190,6 +190,10 @@ app.post("/chat", chatLimiter, async (req, res) => {
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
 
+app.get("/logo.png", (req, res) => {
+  res.sendFile(path.join(__dirname, "FQ logo.png"));
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "fleet-hub-chat.html"));
 });
