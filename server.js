@@ -154,8 +154,9 @@ app.post("/chat", chatLimiter, async (req, res) => {
         "anthropic-beta": "mcp-client-2025-04-04",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 600,
+        stream: true,
         system: SYSTEM_PROMPT,
         messages,
         mcp_servers: [
@@ -169,22 +170,47 @@ app.post("/chat", chatLimiter, async (req, res) => {
       }),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
+      const err = await response.json();
       return res.status(response.status).json({ error: "Upstream API error." });
     }
 
-    const text = (data.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
+    // Stream SSE back to client
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
 
-    res.json({ reply: text || "No response from hub." });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (!raw || raw === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(raw);
+          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+            res.write(`data: ${JSON.stringify({ text: evt.delta.text })}\n\n`);
+          } else if (evt.type === "message_stop") {
+            res.write("data: [DONE]\n\n");
+          }
+        } catch {}
+      }
+    }
+
+    res.end();
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error. Please try again." });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Server error. Please try again." });
+    }
   }
 });
 

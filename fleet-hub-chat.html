@@ -405,12 +405,53 @@
         body: JSON.stringify({ messages: apiMessages })
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Proxy error");
+      }
 
-      if (!response.ok) throw new Error(data.error || "Proxy error");
-
+      // Stream the response
       removeTyping();
-      addMessage("ai", data.reply || "No response received from the hub.");
+      const container = document.getElementById("messages");
+      const div = document.createElement("div");
+      div.className = "message ai";
+      const avatar = document.createElement("div");
+      avatar.className = "avatar ai";
+      avatar.textContent = "FQ";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble ai";
+      div.appendChild(avatar);
+      div.appendChild(bubble);
+      container.appendChild(div);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (raw === "[DONE]") break;
+          try {
+            const evt = JSON.parse(raw);
+            if (evt.text) {
+              fullText += evt.text;
+              bubble.innerHTML = formatContent(fullText);
+              container.scrollTop = container.scrollHeight;
+            }
+          } catch {}
+        }
+      }
+
+      // Store complete message in history
+      messages.push({ role: "ai", content: fullText || "No response received from the hub." });
 
     } catch (err) {
       removeTyping();
