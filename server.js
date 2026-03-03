@@ -4,6 +4,7 @@ const path = require("path");
 const rateLimit = require("express-rate-limit");
 
 const app = express();
+app.set("trust proxy", 1); // Railway sits behind a proxy
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const HUB_ID = "887999410";
