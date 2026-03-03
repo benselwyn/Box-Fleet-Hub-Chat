@@ -7,9 +7,37 @@ app.use(cors());
 app.use(express.json());
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const BOX_CLIENT_ID = process.env.BOX_CLIENT_ID;
+const BOX_CLIENT_SECRET = process.env.BOX_CLIENT_SECRET;
+const BOX_ENTERPRISE_ID = process.env.BOX_ENTERPRISE_ID;
 
-if (!ANTHROPIC_API_KEY) {
-  console.error("ERROR: ANTHROPIC_API_KEY environment variable not set.");
+// Token cache
+let boxToken = null;
+let tokenExpiry = 0;
+
+async function getBoxToken() {
+  if (boxToken && Date.now() < tokenExpiry) return boxToken;
+
+  const params = new URLSearchParams({
+    client_id: BOX_CLIENT_ID,
+    client_secret: BOX_CLIENT_SECRET,
+    grant_type: "client_credentials",
+    box_subject_type: "enterprise",
+    box_subject_id: BOX_ENTERPRISE_ID,
+  });
+
+  const res = await fetch("https://api.box.com/oauth2/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(`Box auth failed: ${data.error_description || data.error}`);
+
+  boxToken = data.access_token;
+  tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
+  return boxToken;
 }
 
 app.post("/chat", async (req, res) => {
@@ -19,6 +47,7 @@ app.post("/chat", async (req, res) => {
 
   try {
     const { messages, system } = req.body;
+    const boxAccessToken = await getBoxToken();
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -38,7 +67,7 @@ app.post("/chat", async (req, res) => {
             type: "url",
             url: "https://mcp.box.com",
             name: "box-mcp",
-            authorization_token: process.env.BOX_ACCESS_TOKEN,
+            authorization_token: boxAccessToken,
           },
         ],
       }),
@@ -59,7 +88,7 @@ app.post("/chat", async (req, res) => {
     res.json({ reply: text || "No response from hub." });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Proxy server error." });
+    res.status(500).json({ error: err.message || "Proxy server error." });
   }
 });
 
