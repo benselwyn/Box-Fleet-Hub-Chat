@@ -80,6 +80,31 @@
     animation: glow 2s ease-in-out infinite;
   }
 
+  .fullscreen-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .fullscreen-btn:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+  }
+
+  .fullscreen-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+  }
+
   @keyframes glow {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
@@ -274,6 +299,11 @@
     <div class="header-sub">box://hub/fleet-research</div>
   </div>
   <div class="status-dot"></div>
+  <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">
+    <svg id="fs-icon" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1.5 1h4v1.5h-2.5v2.5h-1.5v-4zm9 0h4v4h-1.5v-2.5h-2.5v-1.5zm-9 9h1.5v2.5h2.5v1.5h-4v-4zm10.5 2.5v-2.5h1.5v4h-4v-1.5h2.5z"/>
+    </svg>
+  </button>
 </div>
 
 
@@ -291,6 +321,30 @@
   const HUB_TITLE = "Fleet Research";
   let messages = [];
   let loading = false;
+
+  const expandIcon = `<path d="M1.5 1h4v1.5h-2.5v2.5h-1.5v-4zm9 0h4v4h-1.5v-2.5h-2.5v-1.5zm-9 9h1.5v2.5h2.5v1.5h-4v-4zm10.5 2.5v-2.5h1.5v4h-4v-1.5h2.5z"/>`;
+  const collapseIcon = `<path d="M5.5 1.5v2.5h-2.5v1.5h4v-4h-1.5zm5 0h-1.5v4h4v-1.5h-2.5v-2.5zm-7.5 7.5h-2.5v1.5h4v-4h-1.5v2.5zm7.5-2.5v4h1.5v-4h-4v1.5h2.5z"/>`;
+
+  function toggleFullscreen() {
+    const icon = document.getElementById("fs-icon");
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        icon.innerHTML = collapseIcon;
+      }).catch(() => {
+        // Fallback: open in new tab
+        window.open(window.location.href, "_blank");
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        icon.innerHTML = expandIcon;
+      });
+    }
+  }
+
+  document.addEventListener("fullscreenchange", () => {
+    const icon = document.getElementById("fs-icon");
+    if (!document.fullscreenElement) icon.innerHTML = expandIcon;
+  });
 
   window.onload = () => {
     activateChat();
