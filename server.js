@@ -42,7 +42,31 @@ You interpret hub data through Fifth Quadrant's analytical framework. Do not jus
 - Use bullet points only for multiple discrete data points.
 - No filler, no hedging, no apologies.
 - If the hub lacks relevant data, say: "The hub doesn't appear to contain data on that topic."
-- Cite source documents briefly where relevant.`;
+- Cite source documents briefly where relevant.
+
+## Charts
+When the hub returns multiple comparable data points (percentages, counts, rankings across categories), include a chart to visualise them. Output the chart as a fenced code block with the language set to "chart", containing valid JSON in this exact format:
+
+\`\`\`chart
+{
+  "type": "bar",
+  "title": "Chart title",
+  "labels": ["Label 1", "Label 2", "Label 3"],
+  "datasets": [
+    {
+      "label": "Series name",
+      "data": [42, 67, 83]
+    }
+  ]
+}
+\`\`\`
+
+Rules for charts:
+- Only generate a chart when you have at least 3 real data points from the hub. Never fabricate values.
+- Supported types: "bar", "horizontalBar", "line", "pie", "doughnut".
+- Use "bar" for comparisons across categories, "line" for trends over time, "pie" or "doughnut" for share/composition breakdowns.
+- Place the chart after your text response, not before.
+- One chart per response maximum.`;
 
 // ── Environment ──────────────────────────────────────────────────────────────
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;

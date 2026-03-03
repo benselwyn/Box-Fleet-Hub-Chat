@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>FQ Fleet Research Expert</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -173,6 +174,17 @@
   .bubble strong { color: var(--teal); }
   .bubble em { color: var(--text-muted); font-style: normal; font-size: 12px; }
 
+  .chart-wrap {
+    margin-top: 12px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    max-width: 100%;
+  }
+
+  .chart-wrap canvas { max-height: 260px; }
+
   /* Typing */
   .typing-dots { display: flex; gap: 4px; align-items: center; height: 18px; padding: 2px 0; }
   .typing-dots span {
@@ -334,7 +346,7 @@
 
     const bubble = document.createElement("div");
     bubble.className = `bubble ${role}`;
-    bubble.innerHTML = formatContent(content);
+    bubble.replaceChildren(formatContent(content));
 
     div.appendChild(avatar);
     div.appendChild(bubble);
@@ -343,15 +355,86 @@
     return div;
   }
 
+  const FQ_COLOURS = ["#1B2A4A","#2A9D8F","#E9C46A","#E76F51","#6B7A8D","#264653","#A8DADC"];
+
+  function renderChart(jsonStr) {
+    let spec;
+    try { spec = JSON.parse(jsonStr); } catch { return ""; }
+    if (!spec.labels || !spec.datasets) return "";
+
+    const wrap = document.createElement("div");
+    wrap.className = "chart-wrap";
+    const canvas = document.createElement("canvas");
+    wrap.appendChild(canvas);
+
+    const isHorizontal = spec.type === "horizontalBar";
+    const chartType = isHorizontal ? "bar" : spec.type;
+
+    const isPie = chartType === "pie" || chartType === "doughnut";
+
+    const datasets = spec.datasets.map((ds, i) => ({
+      label: ds.label || "",
+      data: ds.data,
+      backgroundColor: isPie
+        ? spec.labels.map((_, j) => FQ_COLOURS[j % FQ_COLOURS.length])
+        : FQ_COLOURS[i % FQ_COLOURS.length],
+      borderColor: isPie ? "#fff" : FQ_COLOURS[i % FQ_COLOURS.length],
+      borderWidth: isPie ? 2 : 0,
+      borderRadius: (!isPie && !isHorizontal) ? 4 : 0,
+    }));
+
+    setTimeout(() => {
+      new Chart(canvas, {
+        type: chartType,
+        data: { labels: spec.labels, datasets },
+        options: {
+          indexAxis: isHorizontal ? "y" : "x",
+          responsive: true,
+          plugins: {
+            legend: { display: isPie, position: "bottom", labels: { font: { family: "Segoe UI, Arial" }, color: "#1B2A4A" } },
+            title: { display: !!spec.title, text: spec.title, color: "#1B2A4A", font: { family: "Segoe UI, Arial", size: 13, weight: "600" }, padding: { bottom: 12 } },
+          },
+          scales: isPie ? {} : {
+            x: { ticks: { color: "#6B7A8D", font: { family: "Segoe UI, Arial", size: 11 } }, grid: { color: "#DDE2E8" } },
+            y: { ticks: { color: "#6B7A8D", font: { family: "Segoe UI, Arial", size: 11 } }, grid: { color: "#DDE2E8" } },
+          },
+        },
+      });
+    }, 0);
+
+    return wrap;
+  }
+
   function formatContent(text) {
-    text = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-    text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-    text = text.replace(/`([^`]+)`/g, "<em>$1</em>");
-    return text;
+    // Split out ```chart blocks first
+    const chartRegex = /```chart\n([\s\S]*?)```/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = chartRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) parts.push({ type: "text", content: text.slice(lastIndex, match.index) });
+      parts.push({ type: "chart", content: match[1].trim() });
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) parts.push({ type: "text", content: text.slice(lastIndex) });
+
+    const container = document.createDocumentFragment();
+    for (const part of parts) {
+      if (part.type === "chart") {
+        const el = renderChart(part.content);
+        if (el) container.appendChild(el);
+      } else {
+        const span = document.createElement("span");
+        let t = part.content
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        t = t.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+        t = t.replace(/`([^`]+)`/g, "<em>$1</em>");
+        span.innerHTML = t;
+        container.appendChild(span);
+      }
+    }
+    return container;
   }
 
   function showTyping() {
@@ -443,7 +526,7 @@
             const evt = JSON.parse(raw);
             if (evt.text) {
               fullText += evt.text;
-              bubble.innerHTML = formatContent(fullText);
+              bubble.replaceChildren(formatContent(fullText));
               container.scrollTop = container.scrollHeight;
             }
           } catch {}
