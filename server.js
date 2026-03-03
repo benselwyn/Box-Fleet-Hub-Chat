@@ -38,6 +38,7 @@ app.post("/chat", async (req, res) => {
             type: "url",
             url: "https://mcp.box.com",
             name: "box-mcp",
+            authorization_token: process.env.BOX_ACCESS_TOKEN,
           },
         ],
       }),
